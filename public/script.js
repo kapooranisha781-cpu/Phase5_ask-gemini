@@ -4,6 +4,7 @@ const answer = document.getElementById("answer");
 
 askButton.addEventListener("click", async () => {
     const question = questionInput.value.trim();
+
     if (!question) {
         answer.textContent = "Please enter a question.";
         return;
@@ -13,16 +14,18 @@ askButton.addEventListener("click", async () => {
     askButton.disabled = true;
 
     try {
-
-        const response = await fetch("/ask", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                question: question
-            })
-        });
+        const response = await fetch(
+            "https://phase5-ask-gemini-igj9.vercel.app/ask",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    question: question
+                })
+            }
+        );
 
         const data = await response.json();
 
@@ -38,6 +41,7 @@ askButton.addEventListener("click", async () => {
         console.error("Frontend Error:", error);
         answer.textContent =
             "Unable to connect to the server.";
+
     } finally {
         askButton.disabled = false;
     }
