@@ -1,44 +1,42 @@
-import express from "express";
-import dotenv from "dotenv";
-import { GoogleGenAI } from "@google/genai";
+const questionInput = document.getElementById("question");
+const askButton = document.getElementById("askButton");
+const answer = document.getElementById("answer");
 
-dotenv.config();
+askButton.addEventListener("click", async () => {
+    const question = questionInput.value.trim();
 
-const app = express();
-
-const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-});
-
-app.use(express.json());
-app.use(express.static("public"));
-
-app.post("/ask", async (req, res) => {
-    const { question } = req.body;
-
-    if (!question || question.trim() === "") {
-        return res.status(400).json({
-            error: "Please enter a question."
-        });
+    if (!question) {
+        answer.textContent = "Please enter a question.";
+        return;
     }
+
+    answer.textContent = "Thinking... 🤔";
+    askButton.disabled = true;
 
     try {
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: question,
+        const response = await fetch("/ask", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                question: question
+            })
         });
 
-        res.json({
-            answer: response.text
-        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            answer.textContent = data.error || "Something went wrong.";
+            return;
+        }
+
+        answer.textContent = data.answer;
 
     } catch (error) {
-        console.error("Gemini API Error:", error);
-
-        res.status(500).json({
-            error: "Something went wrong while getting the answer."
-        });
+        console.error("Frontend Error:", error);
+        answer.textContent = "Unable to connect to the server.";
+    } finally {
+        askButton.disabled = false;
     }
 });
-
-export default app;
