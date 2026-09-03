@@ -11,10 +11,7 @@ const ai = new GoogleGenAI({
 });
 
 app.use(express.json());
-
-app.get("/", (req, res) => {
-    res.send("Ask Gemini API is running!");
-});
+app.use(express.static("public"));
 
 app.post("/ask", async (req, res) => {
     const { question } = req.body;
