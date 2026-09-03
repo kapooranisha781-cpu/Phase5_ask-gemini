@@ -1,48 +1,44 @@
-const questionInput = document.getElementById("question");
-const askButton = document.getElementById("askButton");
-const answer = document.getElementById("answer");
+import express from "express";
+import dotenv from "dotenv";
+import { GoogleGenAI } from "@google/genai";
 
-askButton.addEventListener("click", async () => {
-    const question = questionInput.value.trim();
+dotenv.config();
 
-    if (!question) {
-        answer.textContent = "Please enter a question.";
-        return;
+const app = express();
+
+const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY,
+});
+
+app.use(express.json());
+app.use(express.static("public"));
+
+app.post("/ask", async (req, res) => {
+    const { question } = req.body;
+
+    if (!question || question.trim() === "") {
+        return res.status(400).json({
+            error: "Please enter a question."
+        });
     }
-
-    answer.textContent = "Thinking... 🤔";
-    askButton.disabled = true;
 
     try {
-        const response = await fetch(
-            "https://phase5-ask-gemini-igj9.vercel.app/ask",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    question: question
-                })
-            }
-        );
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: question,
+        });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            answer.textContent =
-                data.error || "Something went wrong.";
-            return;
-        }
-
-        answer.textContent = data.answer;
+        res.json({
+            answer: response.text
+        });
 
     } catch (error) {
-        console.error("Frontend Error:", error);
-        answer.textContent =
-            "Unable to connect to the server.";
+        console.error("Gemini API Error:", error);
 
-    } finally {
-        askButton.disabled = false;
+        res.status(500).json({
+            error: "Something went wrong while getting the answer."
+        });
     }
 });
+
+export default app;
